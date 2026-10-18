@@ -51,6 +51,12 @@ class TestPatternParserTest : FunSpec() {
             TestPattern("io.kotest", false, "MySpec", listOf("returns 1.5", "when input is 0.5"))
       }
 
+      test("wildcards in the class name and package") {
+         TestPatternParser.parse("*Test") shouldBe TestPattern("", false, "*Test", emptyList())
+         TestPatternParser.parse("*.MySpec") shouldBe TestPattern("*", false, "MySpec", emptyList())
+         TestPatternParser.parse("io.*.MySpec.test*") shouldBe TestPattern("io.*", false, "MySpec", listOf("test*"))
+      }
+
       test("empty segments should not throw") {
          shouldNotThrowAny { TestPatternParser.parse("io..kotest.MySpec") }
       }

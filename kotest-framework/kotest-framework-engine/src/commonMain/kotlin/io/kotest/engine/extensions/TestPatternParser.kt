@@ -8,8 +8,10 @@ package io.kotest.engine.extensions
  * The test can be a nested test.
  *
  * Package names are expected to be lower case.
- * The class name is expected to be upper case.
+ * The class name is the first part that starts with an upper case letter, ignoring leading `*`s.
  * The test context is whatever comes after the class name.
+ *
+ * Any part can contain `*` wildcards, as in Gradle's `--tests`, for example `*Test` or `io.*.SomeTest`.
  *
  * Examples:
  *
@@ -28,10 +30,14 @@ internal object TestPatternParser {
       require(arg.isNotBlank())
       val parts = arg.split(".")
 
-      val packageParts = parts.takeWhile { it.firstOrNull()?.isLowerCase() == true }
+      val packageParts = parts.takeWhile { it.trimStart('*').firstOrNull()?.isUpperCase() != true }
       val simpleName = parts.drop(packageParts.size).firstOrNull()
-      if (simpleName === null) return TestPattern(packageParts.joinToString("."), false, null, emptyList())
-      if (simpleName == "*") return TestPattern(packageParts.joinToString("."), true, null, emptyList())
+      if (simpleName === null) {
+         return if (packageParts.last() == "*")
+            TestPattern(packageParts.dropLast(1).joinToString("."), true, null, emptyList())
+         else
+            TestPattern(packageParts.joinToString("."), false, null, emptyList())
+      }
 
       val test = parts
          .drop(packageParts.size) // drop the package parts
